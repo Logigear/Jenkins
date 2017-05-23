@@ -8,8 +8,8 @@ pipeline {
   stages {
     stage('build') {
       steps {
-        for(int i=1; i<=3; i++){
           print 'test'
+        for(int i=1; i<=3; i++){
           agent {
             label "label"$i
           }
