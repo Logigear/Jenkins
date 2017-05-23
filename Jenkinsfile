@@ -11,7 +11,9 @@ pipeline {
         for(int i=1; i<=3; i++){
           parallel(
             'label':{
-              node ('label' $i){
+              agent {
+                label "label"$i
+              }
                 sh 'echo test'
               }
             }
