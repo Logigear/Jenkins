@@ -10,7 +10,7 @@ pipeline {
       steps {
         for(int i=1; i<=3; i++){
           parallel(
-            "label" $i:{
+            'label$i':{
               node ('label' $i){
                 sh 'echo test'
               }
