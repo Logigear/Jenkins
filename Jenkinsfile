@@ -8,11 +8,12 @@ pipeline {
   stages {
     stage('build') {
       steps {
-        for(int i=1; i<=3; i++){
-          parallel{
-            "label" $i:
-            node ('label' $i){
-              sh 'echo test'
+        parallel{
+          for(int i=1; i<=3; i++){
+            "label" $i:{
+              node ('label' $i){
+                sh 'echo test'
+              }
             }
           }
         }
