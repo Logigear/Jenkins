@@ -1,9 +1,13 @@
-
-pipeline{
-  agent any
-  stages{
-    stage ('build'){
-      steps{
+pipeline {
+  agent {
+    node {
+      label 'master'
+    }
+    
+  }
+  stages {
+    stage('build') {
+      steps {
         sh 'echo "test"'
       }
     }
