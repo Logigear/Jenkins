@@ -14,8 +14,7 @@ pipeline {
               agent {
                 label "label"$i
               }
-                sh 'echo test'
-              }
+              sh 'echo test'
             }
           )
         }
