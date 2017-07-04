@@ -126,56 +126,57 @@ pipeline {
             steps {
                 echo 'Send mail'
                 script {
-                for (int b = 0; b < branches.size(); b++) {
-                    def _b = b
-                    String branch = branches[_b]
-                    //Call generate HTML tool
-                    if (isUnix()) {
-                        sh 'mkdir -p "${WORKSPACE}/html/' + branch + '/${BUILD_NUMBER}"'
-                        sh 'mkdir -p "${WORKSPACE}/email/' + branch + '/${BUILD_NUMBER}"'
-                        def number_of_files_linux = sh(script: 'ls "${htmlLocation}/' + branch + '/${BUILD_NUMBER}" | wc -l', returnStdout: true)
-                        echo 'number_of_files_linux = ' + number_of_files_linux
-                        if (number_of_files_linux.toString().trim() != "0") {
-                            sh 'if test -d "${htmlLocation}/' + branch + '/${BUILD_NUMBER}"; then cp -r "${htmlLocation}/' + branch + '/${BUILD_NUMBER}"/* "${WORKSPACE}/html/' + branch + '/${BUILD_NUMBER}"; fi'
+                    for (int b = 0; b < branches.size(); b++) {
+                        def _b = b
+                        String branch = branches[_b]
+                        //Call generate HTML tool
+                        if (isUnix()) {
+                            sh 'mkdir -p "${WORKSPACE}/html/' + branch + '/${BUILD_NUMBER}"'
+                            sh 'mkdir -p "${WORKSPACE}/email/' + branch + '/${BUILD_NUMBER}"'
+                            def number_of_files_linux = sh(script: 'ls "${htmlLocation}/' + branch + '/${BUILD_NUMBER}" | wc -l', returnStdout: true)
+                            echo 'number_of_files_linux = ' + number_of_files_linux
+                            if (number_of_files_linux.toString().trim() != "0") {
+                                sh 'if test -d "${htmlLocation}/' + branch + '/${BUILD_NUMBER}"; then cp -r "${htmlLocation}/' + branch + '/${BUILD_NUMBER}"/* "${WORKSPACE}/html/' + branch + '/${BUILD_NUMBER}"; fi'
+                            } else {
+                                echo "Result empty"
+                            }
+
+
+                            def number_of_files_windows = sh(script: 'ls "${htmlLocation}/' + branch + '/Win-${BUILD_NUMBER}" | wc -l', returnStdout: true)
+                            echo 'number_of_files_windows = ' + number_of_files_windows
+
+                            if (number_of_files_windows.toString().trim() != "0") {
+                                sh 'if test -d "${htmlLocation}/' + branch + '/Win-${BUILD_NUMBER}"; then cp -r "${htmlLocation}/' + branch + '/Win-${BUILD_NUMBER}"/* "${WORKSPACE}/html/' + branch + '/${BUILD_NUMBER}"; fi'
+                            } else {
+                                echo "Result empty"
+                            }
+                            //Generate HTML template
+                            sh 'java -jar "/Landmark/apps/ForDSGAutomation/GenerateSummaryReport/GenerateSummaryReport.jar" ${WORKSPACE}/html/' + branch + '/${BUILD_NUMBER} ${WORKSPACE}/email/' + branch + '/${BUILD_NUMBER}'
+
+                            //Copy to Halli network
+                            sh 'bash /Landmark/apps/Scripts/Jenkin_Transfer/jenkin_transfer.sh ' + branch + ' ${BUILD_NUMBER} ${WORKSPACE}/email/' + branch + '/${BUILD_NUMBER}'
+
+                            //remove temporary files
+                            //sh 'rm -rf "${WORKSPACE}/html/"*'
                         } else {
-                            echo "Result empty"
+                            bat("copy '%WINDOWS_PATH%%htmlLocation%' '%WORKSPACE%/html/%BUILD_NUMBER%'")
+                            bat("copy '%WINDOWS_PATH%%htmlLocation%'" + branch + "/%BUILD_NUMBER% '%WORKSPACE%/html/" + branch + "/%BUILD_NUMBER%'")
+                            bat("copy '%WINDOWS_PATH%%htmlLocation%'" + branch + "/Win-%BUILD_NUMBER% '%WORKSPACE%/html/" + branch + "/%BUILD_NUMBER%'")
+                            bat 'java -jar "//nas-1/Landmark/apps/ForDSGAutomation/GenerateSummaryReport/GenerateSummaryReport.jar" %WORKSPACE%/html/' + branch + '"/%BUILD_NUMBER% %WORKSPACE%/email/' + branch + '"/%BUILD_NUMBER%'
                         }
-
-
-                        def number_of_files_windows = sh(script: 'ls "${htmlLocation}/' + branch + '/Win-${BUILD_NUMBER}" | wc -l', returnStdout: true)
-                        echo 'number_of_files_windows = ' + number_of_files_windows
-
-                        if (number_of_files_windows.toString().trim() != "0") {
-                            sh 'if test -d "${htmlLocation}/' + branch + '/Win-${BUILD_NUMBER}"; then cp -r "${htmlLocation}/' + branch + '/Win-${BUILD_NUMBER}"/* "${WORKSPACE}/html/' + branch + '/${BUILD_NUMBER}"; fi'
-                        } else {
-                            echo "Result empty"
-                        }
-                        //Generate HTML template
-                        sh 'java -jar "/Landmark/apps/ForDSGAutomation/GenerateSummaryReport/GenerateSummaryReport.jar" ${WORKSPACE}/html/' + branch + '/${BUILD_NUMBER} ${WORKSPACE}/email/' + branch + '/${BUILD_NUMBER}'
-
-                        //Copy to Halli network
-                        sh 'bash /Landmark/apps/Scripts/Jenkin_Transfer/jenkin_transfer.sh ' + branch + ' ${BUILD_NUMBER} ${WORKSPACE}/email/' + branch + '/${BUILD_NUMBER}'
-
-                        //remove temporary files
-                        //sh 'rm -rf "${WORKSPACE}/html/"*'
-                    } else {
-                        bat("copy '%WINDOWS_PATH%%htmlLocation%' '%WORKSPACE%/html/%BUILD_NUMBER%'")
-                        bat("copy '%WINDOWS_PATH%%htmlLocation%'" + branch + "/%BUILD_NUMBER% '%WORKSPACE%/html/" + branch + "/%BUILD_NUMBER%'")
-                        bat("copy '%WINDOWS_PATH%%htmlLocation%'" + branch + "/Win-%BUILD_NUMBER% '%WORKSPACE%/html/" + branch + "/%BUILD_NUMBER%'")
-                        bat 'java -jar "//nas-1/Landmark/apps/ForDSGAutomation/GenerateSummaryReport/GenerateSummaryReport.jar" %WORKSPACE%/html/' + branch + '"/%BUILD_NUMBER% %WORKSPACE%/email/' + branch + '"/%BUILD_NUMBER%'
-                    }
-                    script {
-                        //get htm file
-                        def htmlFiles = getFiles("email/" + branch + "/${BUILD_NUMBER}/*.html")
-                        def fileName
-                        if (htmlFiles.size() > 0) {
-                            fileName = htmlFiles[0].name
-                            //echo fileName
-                            def content = readFile("email/" + branch + "/${BUILD_NUMBER}/" + fileName)
-                            def autVersion = sh(script: 'grep "AUT Version" ${WORKSPACE}/email/' + branch + '/${BUILD_NUMBER}/' + fileName + '  | sed "s/.*Version: //" | sed "s/<.*//"', returnStdout: true)
-                            autVersion = autVersion.replaceAll("\n", ",")
-                            //Send email
-                            emailext(attachLog: true, body: content, compressLog: true, subject: "Test Results of " + branch + " - " + autVersion, to: '${Recipient}')
+                        script {
+                            //get htm file
+                            def htmlFiles = getFiles("email/" + branch + "/${BUILD_NUMBER}/*.html")
+                            def fileName
+                            if (htmlFiles.size() > 0) {
+                                fileName = htmlFiles[0].name
+                                //echo fileName
+                                def content = readFile("email/" + branch + "/${BUILD_NUMBER}/" + fileName)
+                                def autVersion = sh(script: 'grep "AUT Version" ${WORKSPACE}/email/' + branch + '/${BUILD_NUMBER}/' + fileName + '  | sed "s/.*Version: //" | sed "s/<.*//"', returnStdout: true)
+                                autVersion = autVersion.replaceAll("\n", ",")
+                                //Send email
+                                emailext(attachLog: true, body: content, compressLog: true, subject: "Test Results of " + branch + " - " + autVersion, to: '${Recipient}')
+                            }
                         }
                     }
                 }
