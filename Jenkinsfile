@@ -7,20 +7,20 @@ pipeline {
     stages {
         stage('test') {
             steps {
-                if (isUnix()) {
-                    sh '''
-              rm -rf "${WORKSPACE}/BAT/"*
-              cp -r "${BatchLocation}/"* "${WORKSPACE}/BAT"
-          '''
-                } else {
-                    bat '''
-              del "%WORKSPACE%/BAT/*"
-              cd "%BatchLocation_Win%"
-              copy * "%WORKSPACE%/BAT"
-          '''
-                }
                 // Run a set of batch files on each slave in parallel
                 script {
+                    if (isUnix()) {
+                        sh '''
+                            rm -rf "${WORKSPACE}/BAT/"*
+                            cp -r "${BatchLocation}/"* "${WORKSPACE}/BAT"
+                        '''
+                    } else {
+                        bat '''
+                            del "%WORKSPACE%/BAT/*"
+                            cd "%BatchLocation_Win%"
+                            copy * "%WORKSPACE%/BAT"
+                        '''
+                    }
                     def jobs = [:]
                     branches = "${BRANCHES}".toString().trim().split(',')
                     for (int k = 0; k < branches.size(); k++) {
