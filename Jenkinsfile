@@ -125,7 +125,7 @@ pipeline {
         stage('send mail') {
             steps {
                 echo 'Send mail'
-
+                script {
                 for (int b = 0; b < branches.size(); b++) {
                     def _b = b
                     String branch = branches[_b]
