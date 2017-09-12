@@ -1,0 +1,43 @@
+{
+	"variables": {
+		"aws_access_key" : "{{env `aws_access`}}",
+		"aws_secret_key" : "{{env `aws_secret`}}",
+		"ami_id" : "ami-1df65f0b",
+		"aws_instance_type" : "t2.micro",
+		"winrm_username" : "Administrator",
+		"winrm_password" : "123456"
+	},
+	"builders": [
+		{
+			"ami_name" : "Packer AMI {{timestamp}}",
+			"type" : "amazon-ebs",
+			"secret_key" : "{{user `aws_secret_key`}}",
+			"access_key" : "{{user `aws_access_key`}}",
+			"region" : "us-east-1",
+			"instance_type" : "t2.micro",
+			"source_ami" : "ami-1df65f0b",
+			"shutdown_behavior" : "stop",
+			"security_group_id" : "sg-f1e68b8d",	
+			"communicator" : "winrm",
+			"winrm_timeout" : "60m",
+			"winrm_username" : "Administrator",
+			"winrm_password" : "123456",
+			"winrm_use_ssl" : true,
+			"winrm_insecure" : true
+		}
+	],
+	"provisioners": [
+		{
+			"type" : "file",
+			"source" : "Z:\\TABuild\\install.iss",
+			"destination" : "C:\\TABuild\\install.iss"
+		}
+	],
+	"post-processors": [
+		{
+			"type": "manifest",
+			"output": "manifest.json",
+			"strip_path": true
+		}
+	]
+}
